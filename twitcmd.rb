@@ -1,10 +1,14 @@
 require "rubygems"
 require "twitter"
 
+since_id = nil
 cf = "#{ENV['HOME']}/.twitcmd"
-
+cfs = "#{ENV['HOME']}/.twitcmd_since"
 if File.exists?(cf)
 	eval(open(cf).read)
+end
+if File.exists?(cfs)
+        since_id = open(cfs).read.to_i
 end
 
 # Certain methods require authentication. To get your Twitter OAuth credentials,
@@ -20,11 +24,37 @@ end
 client = Twitter::Client.new
 
 # Post a status update
-#client.update("I just posted a status update via the Twitter Ruby Gem!")
+if ARGV.length > 1
+	client.update("I just posted a status update via the Twitter Ruby Gem!")
+end
+
+def get_reply_chain(status)
+        a = ""
+        depth = 1
+        while status
+                begin
+
+                        tweet = Twitter.status(Twitter.status(status).in_reply_to_status_id)
+                        depth_i = ""
+                        depth.times { depth_i << ">>" }
+                        a << "#{depth_i} #{tweet.user.name} #{tweet.text}\n"
+                        status = Twitter.status(status).in_reply_to_status_id
+                rescue Exception => e
+                        status = nil
+                end
+                depth += 1
+        end
+        return a
+end
+
 
 # Read the most recent status update in your home timeline
 #client.home_timeline.first.methods.each { |a| puts a }
-client.home_timeline({ :include_entities => 't' }).each { |a| 
+new_since = client.home_timeline.first.id
+args = { :include_entities => 't' } 
+args = { :include_entities => 't', :count => 200, :since_id => since_id } if since_id
+puts "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>"
+client.home_timeline(args).reverse.each { |a| 
 	puts a.text 
 	puts a.user.name 
 	puts "http://twitter.com/#!/#{a.user.screen_name}/status/#{a.id}" 
@@ -32,13 +62,14 @@ client.home_timeline({ :include_entities => 't' }).each { |a|
 		puts "RETWEETED"
 		puts a.retweeted_status.text
 	end
+	if a.in_reply_to_status_id 
+		puts "in reply to"
+		puts get_reply_chain(a.id)
+	end
+	puts a.created_at
 	puts "---------------------------------------------------------------"
-}.reverse
+}
 
-p client.home_timeline.first.id
-cfa = open(cf).readlines
-cfa.collect { |l| if l =~ /since_id/ ; l == "since_id = #{client.home_timeline.first.id}" ; end }
-
-puts cfa
+open(cfs,'w') { |f| f.write(new_since) }
 # Get your rate limit status
 puts client.rate_limit_status.remaining_hits.to_s + " Twitter API request(s) remaining this hour"

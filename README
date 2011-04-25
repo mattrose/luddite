@@ -1,10 +1,12 @@
 No longer sample code.
 Given a consumer_key, consumer secret, and oauth access tokens, it will deliver a tweetstream.
 
-https://dev.twitter.com/apps/881899
+Features:  2 features that I'm super proud of, and proof to myself that when I say to myself:
+It can't be that hard, sometimes it isn't actually that hard.
+
+app url from twitter https://dev.twitter.com/apps/881899
 
 TODO:
-Record since_id, and only grab unread tweets
 Figure out OAUTH, enough so that I can feed it credentials and get a token back.
 poster
 interactive reader
