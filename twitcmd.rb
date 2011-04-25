@@ -1,33 +1,11 @@
 require "rubygems"
 require "twitter"
 
-# Get a user's location
-puts Twitter.user("sferik").location
+cf = "#{ENV['HOME']}/.twitcmd"
 
-# Get a user's most recent status update
-puts Twitter.user_timeline("sferik").first.text
-
-# Get a status update by id
-puts Twitter.status(27558893223).text
-
-# Initialize a Twitter search
-search = Twitter::Search.new
-
-# Find the 3 most recent marriage proposals to @justinbieber
-search.containing("marry me").to("justinbieber").result_type("recent").per_page(3).each do |r|
-  puts "#{r.from_user}: #{r.text}"
+if File.exists?(cf)
+	eval(open(cf).read)
 end
-
-# Enough about Justin Bieber
-search.clear
-
-# Let's find a Japanese-language status update tagged #ruby
-puts search.hashtag("ruby").language("ja").no_retweets.per_page(1).fetch.first.text
-
-# And another
-puts search.fetch_next_page.first.text
-
-exit
 
 # Certain methods require authentication. To get your Twitter OAuth credentials,
 # register an app at http://dev.twitter.com/apps
@@ -42,16 +20,25 @@ end
 client = Twitter::Client.new
 
 # Post a status update
-client.update("I just posted a status update via the Twitter Ruby Gem!")
+#client.update("I just posted a status update via the Twitter Ruby Gem!")
 
 # Read the most recent status update in your home timeline
-puts client.home_timeline.first.text
+#client.home_timeline.first.methods.each { |a| puts a }
+client.home_timeline({ :include_entities => 't' }).each { |a| 
+	puts a.text 
+	puts a.user.name 
+	puts "http://twitter.com/#!/#{a.user.screen_name}/status/#{a.id}" 
+	if a.retweeted_status
+		puts "RETWEETED"
+		puts a.retweeted_status.text
+	end
+	puts "---------------------------------------------------------------"
+}.reverse
 
-# Who's your most popular friend?
-puts client.friends.sort{|a, b| a.followers_count <=> b.followers_count}.reverse.first.name
+p client.home_timeline.first.id
+cfa = open(cf).readlines
+cfa.collect { |l| if l =~ /since_id/ ; l == "since_id = #{client.home_timeline.first.id}" ; end }
 
-# Who's your most popular follower?
-puts client.followers.sort{|a, b| a.followers_count <=> b.followers_count}.reverse.first.name
-
+puts cfa
 # Get your rate limit status
 puts client.rate_limit_status.remaining_hits.to_s + " Twitter API request(s) remaining this hour"
