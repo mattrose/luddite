@@ -4,6 +4,16 @@ Given a consumer_key, consumer secret, and oauth access tokens, it will deliver 
 Features:  2 features that I'm super proud of, and proof to myself that when I say to myself:
 It can't be that hard, sometimes it isn't actually that hard.
 
+Feature 1:  when it comes accross a retweet, it puts both the quoted text, and the text of the
+            original message.  This means when the end ( which is where ppl always put the URL)
+	    gets cut off, you can see the full message.  Means you may have to see the message 
+	    twice, but there's no way around this.
+
+Feature 2:  get_reply_chain.  people often use @replies, but no client but mine has support for 
+            showing them inline. When luddite sees that a message is an @reply it shows the 
+	    entire conversation inline
+
+
 app url from twitter https://dev.twitter.com/apps/881899
 
 TODO:
