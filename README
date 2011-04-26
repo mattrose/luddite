@@ -40,12 +40,14 @@ Tue Apr 26 15:33:41 +0000 2011
 app url from twitter https://dev.twitter.com/apps/881899
 
 TODO:
-Prioirity 1 is: Figure out OAUTH, enough so that I can feed it credentials and get a token back.  this is necessary for release
+Got OAUTH figured out.  Now implement
+Priority 1 is: Figure out OAUTH, enough so that I can feed it credentials and get a token back.  this is necessary for release
 poster
-interactive reader
+interactive reader (half done, need to implement retweet and reply functions)
 
 Bugs
 if there are more than 200 responses since it was last run, it'll only get the latest 200.  
 I have to hack around the twitter API for this.
+Can't rt or reply from the app yet
 It's getting kinda hard to read.
  

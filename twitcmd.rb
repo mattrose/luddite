@@ -1,5 +1,6 @@
 require "rubygems"
 require "twitter"
+require 'highline/import'
 
 since_id = nil
 cf = "#{ENV['HOME']}/.twitcmd"
@@ -55,8 +56,8 @@ args = { :include_entities => 't' }
 args = { :include_entities => 't', :count => 200, :since_id => since_id } if since_id
 puts "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>"
 client.home_timeline(args).reverse.each { |a| 
-	puts a.text 
 	puts a.user.name 
+	puts a.text 
 	puts "http://twitter.com/#!/#{a.user.screen_name}/status/#{a.id}" 
 	if a.retweeted_status
 		puts "RETWEETED"
@@ -68,6 +69,13 @@ client.home_timeline(args).reverse.each { |a|
 	end
 	puts a.created_at
 	puts "---------------------------------------------------------------"
+	cmd = ask("reply, retweet, next or quit:  ", ["","r","rt","n","q"]) { |q| q.readline }
+	if cmd == "q"
+		break
+		new_since = a.id
+	elsif cmd == "n" or cmd == ""
+		next
+	end
 }
 
 open(cfs,'w') { |f| f.write(new_since) }
