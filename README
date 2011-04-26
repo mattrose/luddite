@@ -9,14 +9,43 @@ Feature 1:  when it comes accross a retweet, it puts both the quoted text, and t
 	    gets cut off, you can see the full message.  Means you may have to see the message 
 	    twice, but there's no way around this.
 
+EXAMPLE
+RT @michaelgendron: If the #NDP win half as many seats as EKOS says, they're going to collectively regret a lot of things they've said a ...
+kady o'malley
+http://twitter.com/#!/kady/status/62902530736259072
+RETWEETED
+If the #NDP win half as many seats as EKOS says, they're going to collectively regret a lot of things they've said about current Senators.
+Tue Apr 26 15:35:06 +0000 2011
+
+
 Feature 2:  get_reply_chain.  people often use @replies, but no client but mine has support for 
             showing them inline. When luddite sees that a message is an @reply it shows the 
 	    entire conversation inline
+
+EXAMPLE:
+
+@InklessPW sent!
+Rosemary Barton
+http://twitter.com/#!/RosieBarton/status/62902172433661952
+in reply to
+>> Paul Wells @RosieBarton inklesswells at gmail dot com. Thank you.
+>>>> Rosemary Barton @InklessPW send me ur email pls.
+>>>>>> Paul Wells @RosieBarton Then tomorrow will be loads of fun!
+>>>>>>>> Rosemary Barton @InklessPW agreed. I meant we did NOT get to Clarity today. We did consti and bill 101 stuff.
+>>>>>>>>>> Paul Wells .@RosieBarton For a few of us '95 referendum dead-enders, there is simply no question remotely as important in any election.
+Tue Apr 26 15:33:41 +0000 2011
+
 
 
 app url from twitter https://dev.twitter.com/apps/881899
 
 TODO:
-Figure out OAUTH, enough so that I can feed it credentials and get a token back.
+Prioirity 1 is: Figure out OAUTH, enough so that I can feed it credentials and get a token back.  this is necessary for release
 poster
 interactive reader
+
+Bugs
+if there are more than 200 responses since it was last run, it'll only get the latest 200.  
+I have to hack around the twitter API for this.
+It's getting kinda hard to read.
+ 
