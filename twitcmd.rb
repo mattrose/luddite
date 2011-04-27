@@ -17,7 +17,7 @@ opts.each {|o,a|
 }
 puts post
 puts count
-exit
+
 
 since_id = nil
 cf = "#{ENV['HOME']}/.twitcmd"
