@@ -1,6 +1,23 @@
 require "rubygems"
 require "twitter"
 require 'highline/import'
+require 'getoptlong'
+
+post = nil
+count = 200
+opts = GetoptLong.new( ["--post","-p", GetoptLong::REQUIRED_ARGUMENT],
+                       ["--count","-c", GetoptLong::REQUIRED_ARGUMENT])
+opts.each {|o,a|
+  case o
+    when "--post"
+      post = a
+    when "--count"
+      count = a.to_i
+  end
+}
+puts post
+puts count
+exit
 
 since_id = nil
 cf = "#{ENV['HOME']}/.twitcmd"
