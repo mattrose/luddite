@@ -2,31 +2,11 @@ require "rubygems"
 require "twitter"
 require 'highline/import'
 
-post = nil
-count = 200
-
-if ARGV[0] == "post"
-	post = ARGV[1..-1]
-end
 since_id = nil
 cf = "#{ENV['HOME']}/.twitcmd"
 cfs = "#{ENV['HOME']}/.twitcmd_since"
-if File.exists?(cf)
-	eval(open(cf).read)
-	if CONSUMER_KEY && CONSUMER_SECRET
-		puts "consumer key read"
-	else
-		CONSUMER_KEY = "f8ZLLDDCHXfq7zw04JwpDA"
-		CONSUMER_SECRET = "GPe5jNFPJC6vahuYnZ7tei1LbuPJwv9RljBnsAIEEs"
-	end
-	
-else
-	puts "no cf file"
-	exit
-end
-if File.exists?(cfs)
-        since_id = open(cfs).read.to_i
-end
+eval(open(cf).read)
+since_id = open(cfs).read.to_i
 
 # Certain methods require authentication. To get your Twitter OAuth credentials,
 # register an app at http://dev.twitter.com/apps
@@ -39,11 +19,6 @@ end
 
 # Initialize your Twitter client
 client = Twitter::Client.new
-
-# Post a status update
-if ARGV.length > 1
-	client.update("I just posted a status update via the Twitter Ruby Gem!")
-end
 
 def get_reply_chain(status)
         a = ""
@@ -65,16 +40,18 @@ def get_reply_chain(status)
 end
 
 
-new_since = client.home_timeline.first.id
 args = { :include_entities => 't' } 
 args = { :include_entities => 't', :count => 200, :since_id => since_id } if since_id
 msgs = []
-#msgs = client.home_timeline(args)
 max_id = nil
 last_max_id = 0
+### Collect all messages since the last since_id.  Twitter only gives you 200 at a time, so cycle
+### throught the pages.
+
 while max_id != last_max_id do 
 	if max_id
 		tmsgs = client.home_timeline(:count => 200, :since_id => since_id, :max_id => max_id)
+		tmsgs.delete_at(-1)
 		last_max_id = msgs.last.id
 	else 
 		tmsgs = client.home_timeline(:count => 200, :since_id => since_id)
@@ -83,25 +60,28 @@ while max_id != last_max_id do
 	max_id = tmsgs.last.id
 	msgs.concat(tmsgs)
 end
+
+### If the array of messages is empty, we don't need to continue
 if msgs == []
         puts "no new messages"
         exit
 end
 
-#puts "no more messages"
+### Delete an artefact of the collection process
 msgs.delete_at(-1)
-num = msgs.length
-puts "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>"
 puts "#{msgs.length} new message since last time this was run"
 puts "the last message you read was from #{Twitter.status(since_id.to_i).created_at}"
-
+puts "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>"
+new_since = msgs.first.id
+num = msgs.length
+### Loop through the messages
 msgs.reverse.each_with_index { |a,i| 
 	puts "message #{i + 1} of #{num}"
 	puts a.user.name 
 	puts a.text 
 	puts "http://twitter.com/#!/#{a.user.screen_name}/status/#{a.id}" 
 	if a.retweeted_status
-		puts "RETWEETED"
+		puts "RETWEETED from #{a.retweeted_status.user.name}"
 		puts a.retweeted_status.text
 	end
 	if a.in_reply_to_status_id 
