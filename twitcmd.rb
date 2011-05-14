@@ -2,14 +2,40 @@ require "rubygems"
 require "twitter"
 require 'highline/import'
 
+unless File.exists?("#{ENV['HOME']}/.luddite")
+  since_id = nil
+  cf = "#{ENV['HOME']}/.twitcmd"
+  cfs = "#{ENV['HOME']}/.twitcmd_since"
+  eval(open(cf).read)
+  since_id = open(cfs).read.to_i
+else
+  config = YAML.load_file("#{ENV['HOME']}/.luddite")
+end
+def authorize
+  begin 
+    client = TwitterOAuth::Client.new(
+      :consumer_key => "f8ZLLDDCHXfq7zw04JwpDA",
+      :consumer_secret => "GPe5jNFPJC6vahuYnZ7tei1LbuPJwv9RljBnsAIEEs"
+    )
+  rescue Exception => e
+  	puts "Couldn't get request_token, double-check yr credentials"
+  	exit 1
+  end
+  request_token = client.request_token
+  p request_token
+  auth = request_token.authorize_url
+  puts "Please go to #{auth} to get a PIN, and enter it here"
+  #`gnome-open #{auth}`
+  pin = ask("enter PIN: ")
 
-
-since_id = nil
-cf = "#{ENV['HOME']}/.twitcmd"
-cfs = "#{ENV['HOME']}/.twitcmd_since"
-eval(open(cf).read)
-since_id = open(cfs).read.to_i
-
+  access_token = client.authorize(
+    request_token.token,
+    request_token.secret,
+    :oauth_verifier => pin 
+  )
+  
+  exit
+end
 # Certain methods require authentication. To get your Twitter OAuth credentials,
 # register an app at http://dev.twitter.com/apps
 Twitter.configure do |config|
