@@ -2,6 +2,8 @@ require "rubygems"
 require "twitter"
 require 'highline/import'
 
+
+
 since_id = nil
 cf = "#{ENV['HOME']}/.twitcmd"
 cfs = "#{ENV['HOME']}/.twitcmd_since"
@@ -90,12 +92,19 @@ msgs.reverse.each_with_index { |a,i|
 	end
 	puts a.created_at
 	puts "---------------------------------------------------------------"
-	cmd = ask("reply, retweet, next or quit:  ", ["","r","rt","n","q"]) { |q| q.readline }
+	cmd = ask("reply r, retweet rt, Old style RT ro, next n or quit q:  ", ["","r","rt","ro""n","q"]) { |q| q.readline }
 	if cmd == "q"
 		new_since = a.id
 		break
 	elsif cmd == "n" or cmd == ""
 		next
+	elsif cmd == "r"
+	  reply = ask("enter reply: @#{a.user.screen_name} ") { |q| q.readline }
+	  Twitter.update(reply, {:in_reply_to_status_id => a.id})
+	elsif cmd == "rt"
+	  rt = Twitter.retweet(a.id)
+	elsif cmd == "ro"
+	  text = ask("RT @#{a.user.screen_name} #{a.text}")
 	end
 }
 
