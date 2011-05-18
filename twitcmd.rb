@@ -1,21 +1,69 @@
 require "rubygems"
 require "twitter"
 require 'highline/import'
+require 'yaml'
+
+since_id = nil
+CONSUMER_KEY = "f8ZLLDDCHXfq7zw04JwpDA"
+CONSUMER_SECRET = "GPe5jNFPJC6vahuYnZ7tei1LbuPJwv9RljBnsAIEEs"
+
+def authorize
+  require 'twitter_oauth'
+  confirm = ask( "This will wipe out your history, are you sure you want to authorize a new account?",["y","Y","n","N"] ) { |q| q .readline }
+  if confirm == "n" or confirm == "N"
+    exit 1
+  end
+  begin
+    client = TwitterOAuth::Client.new(
+      :consumer_key => CONSUMER_KEY,
+      :consumer_secret => CONSUMER_SECRET
+    )
+  rescue Exception => e
+        puts "Couldn't get request_token, double-check yr credentials"
+        exit 1
+  end
+  request_token = client.request_token
+  p request_token
+  auth = request_token.authorize_url
+  puts "Please go to #{auth} to get a PIN, and enter it here"
+  #`gnome-open #{auth}`
+  pin = ask("enter PIN: ")
+
+  access_token = client.authorize(
+    request_token.token,
+    request_token.secret,
+    :oauth_verifier => pin
+  )
+  oauth_token = access_token.params[:oauth_token]
+  oauth_token_secret = access_token.params[:oauth_token_secret]
+  open("#{ENV['HOME']}/.luddite",'w') { |f| f.write({ "token" => oauth_token, "secret" => oauth_token_secret}.to_yaml) }
+  exit
+end
 
 unless File.exists?("#{ENV['HOME']}/.luddite")
-  since_id = nil
-  cf = "#{ENV['HOME']}/.twitcmd"
-  cfs = "#{ENV['HOME']}/.twitcmd_since"
-  eval(open(cf).read)
-  since_id = open(cfs).read.to_i
+  authorize
+  #since_id = nil
+  #cf = "#{ENV['HOME']}/.twitcmd"
+  #cfs = "#{ENV['HOME']}/.twitcmd_since"
+  #eval(open(cf).read)
+  #since_id = open(cfs).read.to_i
 else
-  config = YAML.load_file("#{ENV['HOME']}/.luddite")
+  lconfig = YAML.load_file("#{ENV['HOME']}/.luddite")
+  oauth_token = lconfig["token"]
+  oauth_token_secret = lconfig["secret"]
+  if lconfig["since"]
+    since_id = lconfig["since"]
+  end
 end
 def authorize
+  confirm = ask( "This will wipe out your history, are you sure you want to authorize a new account?",["y","Y","n","N"] ) { |q| q .readline } 
+  if confirm == "n" or confirm == "N"
+    exit 1
+  end
   begin 
     client = TwitterOAuth::Client.new(
-      :consumer_key => "f8ZLLDDCHXfq7zw04JwpDA",
-      :consumer_secret => "GPe5jNFPJC6vahuYnZ7tei1LbuPJwv9RljBnsAIEEs"
+      :consumer_key => CONSUMER_KEY,
+      :consumer_secret => CONSUMER_SECRET
     )
   rescue Exception => e
   	puts "Couldn't get request_token, double-check yr credentials"
@@ -33,7 +81,9 @@ def authorize
     request_token.secret,
     :oauth_verifier => pin 
   )
-  
+  oauth_token = access_token.params[:oauth_token]
+  oauth_token_secret = access_token.params[:oauth_token_secret]  
+  open("#{ENV['HOME']}/.luddite",'w') { |f| f.write({ "token" => oauth_token, "secret" => oauth_token_secret}.to_yaml) }
   exit
 end
 # Certain methods require authentication. To get your Twitter OAuth credentials,
@@ -41,8 +91,8 @@ end
 Twitter.configure do |config|
   config.consumer_key = CONSUMER_KEY
   config.consumer_secret = CONSUMER_SECRET
-  config.oauth_token = OAUTH_TOKEN
-  config.oauth_token_secret = OAUTH_TOKEN_SECRET
+  config.oauth_token = oauth_token
+  config.oauth_token_secret = oauth_token_secret
 end
 
 # Initialize your Twitter client
@@ -68,26 +118,29 @@ def get_reply_chain(status)
 end
 
 
-args = { :include_entities => 't' } 
-args = { :include_entities => 't', :count => 200, :since_id => since_id } if since_id
-msgs = []
-max_id = nil
-last_max_id = 0
+if since_id
+	msgs = []
+	max_id = nil
+	last_max_id = 0
 ### Collect all messages since the last since_id.  Twitter only gives you 200 at a time, so cycle
-### throught the pages.
-
-while max_id != last_max_id do 
-	if max_id
-		tmsgs = client.home_timeline(:count => 200, :since_id => since_id, :max_id => max_id)
-		tmsgs.delete_at(-1)
-		last_max_id = msgs.last.id
-	else 
-		tmsgs = client.home_timeline(:count => 200, :since_id => since_id)
-		last_max_id = 0
+#### throught the pages.
+	while max_id != last_max_id do
+		if max_id
+			tmsgs = client.home_timeline(:count => 200, :since_id => since_id, :max_id => max_id)
+			tmsgs.delete_at(-1)
+			last_max_id = tmsgs.last.id
+		else
+			tmsgs = client.home_timeline(:count => 200, :since_id => since_id)
+			last_max_id = 0
+    end
+    max_id = tmsgs.last.id
+    msgs.concat(tmsgs)
+    ### Delete an artefact of the collection process
+		msgs.delete_at(-1)
 	end
-	max_id = tmsgs.last.id
-	msgs.concat(tmsgs)
-end
+else
+	msgs = client.home_timeline(:count => 1)
+end	
 
 ### If the array of messages is empty, we don't need to continue
 if msgs == []
@@ -96,9 +149,10 @@ if msgs == []
 end
 
 ### Delete an artefact of the collection process
-msgs.delete_at(-1)
 puts "#{msgs.length} new message since last time this was run"
+if since_id
 puts "the last message you read was from #{Twitter.status(since_id.to_i).created_at}"
+end
 puts "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>"
 new_since = msgs.first.id
 num = msgs.length
@@ -134,6 +188,8 @@ msgs.reverse.each_with_index { |a,i|
 	end
 }
 
-open(cfs,'w') { |f| f.write(new_since) }
+lconfig["since"] = new_since
+p lconfig
+open("#{ENV['HOME']}/.luddite",'w') { |f| f.write(lconfig.to_yaml) }
 # Get your rate limit status
 puts client.rate_limit_status.remaining_hits.to_s + " Twitter API request(s) remaining this hour"
