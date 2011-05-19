@@ -4,8 +4,8 @@ require 'highline/import'
 require 'yaml'
 
 since_id = nil
-CONSUMER_KEY = "f8ZLLDDCHXfq7zw04JwpDA"
-CONSUMER_SECRET = "GPe5jNFPJC6vahuYnZ7tei1LbuPJwv9RljBnsAIEEs"
+CONSUMER_KEY = "bNkWlvyOidaiCNbgvlE3Q"
+CONSUMER_SECRET = "qmT3tojxsVcdWBnuBm4CC5AyNN6VTwhECprp3WyJv8"
 
 def authorize
   require 'twitter_oauth'
@@ -128,14 +128,19 @@ if since_id
 		if max_id
 			tmsgs = client.home_timeline(:count => 200, :since_id => since_id, :max_id => max_id)
 			tmsgs.delete_at(-1)
-			last_max_id = tmsgs.last.id
+			puts max_id 
+			puts "First in code: max_id set " + tmsgs.last.class.to_s
+			last_max_id = tmsgs.last.id #unless tmsgs.last.nil?
 		else
 			tmsgs = client.home_timeline(:count => 200, :since_id => since_id)
 			last_max_id = 0
-    end
-    max_id = tmsgs.last.id
-    msgs.concat(tmsgs)
-    ### Delete an artefact of the collection process
+    		end
+		
+		puts max_id
+		puts "max_id not set " + tmsgs.last.class.to_s
+    		msgs.concat(tmsgs)
+    		max_id = msgs.last.id 
+    		### Delete an artefact of the collection process
 		msgs.delete_at(-1)
 	end
 else
@@ -153,6 +158,10 @@ puts "#{msgs.length} new message since last time this was run"
 if since_id
 puts "the last message you read was from #{Twitter.status(since_id.to_i).created_at}"
 end
+if ARGV[0] == "check"
+        exit
+end
+
 puts "<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>"
 new_since = msgs.first.id
 num = msgs.length
@@ -180,7 +189,7 @@ msgs.reverse.each_with_index { |a,i|
 		next
 	elsif cmd == "r"
 	  reply = ask("enter reply: @#{a.user.screen_name} ") { |q| q.readline }
-	  Twitter.update(reply, {:in_reply_to_status_id => a.id})
+	  Twitter.update("@#{a.user.screen_name} #{reply}", {:in_reply_to_status_id => a.id})
 	elsif cmd == "rt"
 	  rt = Twitter.retweet(a.id)
 	elsif cmd == "ro"
@@ -189,7 +198,6 @@ msgs.reverse.each_with_index { |a,i|
 }
 
 lconfig["since"] = new_since
-p lconfig
 open("#{ENV['HOME']}/.luddite",'w') { |f| f.write(lconfig.to_yaml) }
 # Get your rate limit status
 puts client.rate_limit_status.remaining_hits.to_s + " Twitter API request(s) remaining this hour"
