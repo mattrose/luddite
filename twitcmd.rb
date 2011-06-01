@@ -2,6 +2,7 @@ require "rubygems"
 require "twitter"
 require 'highline/import'
 require 'yaml'
+require 'time'
 
 since_id = nil
 CONSUMER_KEY = "bNkWlvyOidaiCNbgvlE3Q"
@@ -119,34 +120,33 @@ end
 
 
 if since_id
-	msgs = []
-	max_id = nil
-	last_max_id = 0
+msgs = []
+max_id = nil
+last_max_id = 0
 ### Collect all messages since the last since_id.  Twitter only gives you 200 at a time, so cycle
-#### throught the pages.
-	while max_id != last_max_id do
-		if max_id
-			tmsgs = client.home_timeline(:count => 200, :since_id => since_id, :max_id => max_id)
-			tmsgs.delete_at(-1)
-			puts max_id 
-			puts "First in code: max_id set " + tmsgs.last.class.to_s
-			last_max_id = tmsgs.last.id #unless tmsgs.last.nil?
-		else
-			tmsgs = client.home_timeline(:count => 200, :since_id => since_id)
-			last_max_id = 0
-    		end
-		
-		puts max_id
-		puts "max_id not set " + tmsgs.last.class.to_s
-    		msgs.concat(tmsgs)
-    		max_id = msgs.last.id 
-    		### Delete an artefact of the collection process
-		msgs.delete_at(-1)
-	end
-else
-	msgs = client.home_timeline(:count => 1)
-end	
+### throught the pages.
 
+while max_id != last_max_id do 
+	if max_id
+		tmsgs = client.home_timeline(:count => 200, :since_id => since_id, :max_id => max_id)
+		p tmsgs if $DEBUG
+		if tmsgs == []
+			break
+		end
+		tmsgs.delete_at(-1)
+		last_max_id = msgs.last.id
+	else 
+		tmsgs = client.home_timeline(:count => 200, :since_id => since_id)
+		last_max_id = 0
+	end
+	if tmsgs == []
+		break
+	else
+		max_id = tmsgs.last.id 
+	end
+	msgs.concat(tmsgs)
+end
+end
 ### If the array of messages is empty, we don't need to continue
 if msgs == []
         puts "no new messages"
@@ -168,18 +168,29 @@ num = msgs.length
 ### Loop through the messages
 msgs.reverse.each_with_index { |a,i| 
 	puts "message #{i + 1} of #{num}"
-	puts a.user.name 
-	puts a.text 
-	puts "http://twitter.com/#!/#{a.user.screen_name}/status/#{a.id}" 
-	if a.retweeted_status
-		puts "RETWEETED from #{a.retweeted_status.user.name}"
-		puts a.retweeted_status.text
-	end
+	#puts a.user.name 
+	#puts a.text 
+	#puts "http://twitter.com/#!/#{a.user.screen_name}/status/#{a.id}" 
+	#if a.retweeted_status
+	#	puts "RETWEETED from #{a.retweeted_status.user.name}"
+	#	puts a.retweeted_status.text
+	#end
+	    @obj = a
+    h =HighLine.new
+    h.wrap_at = 80
+    time = Time.parse(@obj.created_at).localtime.strftime("%b %d %T")
+    if @obj.retweeted_status
+    text = " RT <%= color(\"#{@obj.retweeted_status.user.name}\",BOLD) %> #{@obj.retweeted_status.text}"
+    else
+      text = " " + @obj.text
+    end
+      h.say("<%= color(\"#{@obj.user.name}\",BOLD) %>" + text + "\n" + time + " ")
+
 	if a.in_reply_to_status_id 
 		puts "in reply to"
-		puts get_reply_chain(a.id)
+		h.say(get_reply_chain(a.id))
 	end
-	puts a.created_at
+	h.say("http://twitter.com/#!/#{a.user.screen_name}/status/#{a.id}")
 	puts "---------------------------------------------------------------"
 	cmd = ask("reply r, retweet rt, Old style RT ro, next n or quit q:  ", ["","r","rt","ro""n","q"]) { |q| q.readline }
 	if cmd == "q"
@@ -194,6 +205,7 @@ msgs.reverse.each_with_index { |a,i|
 	  rt = Twitter.retweet(a.id)
 	elsif cmd == "ro"
 	  text = ask("RT @#{a.user.screen_name} #{a.text}")
+          Twitter.update(text)
 	end
 }
 
