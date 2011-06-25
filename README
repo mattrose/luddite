@@ -1,5 +1,14 @@
-No longer sample code.
-Given a consumer_key, consumer secret, and oauth access tokens, it will deliver a tweetstream.
+Luddite is a command line twitter app that mimics an old style bbs forum interface. 
+
+Why, you ask, would I run luddite?
+1.  Simple, fast, familiar (at least for me) interface
+2.  Read tweets in chronological order, not reverse-chronological order
+3.  Read reply chains in situ
+4.  No cut-off retweets.
+
+
+Authentication: "ruby twitcmd.rb"
+this will give you a URL to copy and paste into a browser, which will then ask you for your username and password, and return a PIN.  This PIN can be entered into the console. 
 
 Features:  2 features that I'm super proud of, and proof to myself that when I say to myself:
 It can't be that hard, sometimes it isn't actually that hard.
@@ -40,14 +49,15 @@ Tue Apr 26 15:33:41 +0000 2011
 app url from twitter https://dev.twitter.com/apps/881899
 
 TODO:
-Got OAUTH figured out.  Now implement
-Priority 1 is: Figure out OAUTH, enough so that I can feed it credentials and get a token back.  this is necessary for release
-poster
-interactive reader (half done, need to implement retweet and reply functions)
+fix the "Collecting Messages" output.
+rewrite the logic to save the since_id as soon as it displays the status
+merge vasciano branch
+fix the first-run logic so that it immediately starts displaying tweets after auth
+rename twitcmd.rb to luddite.rb
+rework the display logic to take advantage of highline more.  Highline is awesome.
+maybe save tweets in an internal file so that it doesn't have to collect them all the time?
+Right now, it's one big file.  I don't actually have a problem with this, but I should move the logic into a class to make it more extensible.  This is long term
+
 
 Bugs
-if there are more than 200 responses since it was last run, it'll only get the latest 200.  
-I have to hack around the twitter API for this.
-Can't rt or reply from the app yet
 It's getting kinda hard to read.
- 
